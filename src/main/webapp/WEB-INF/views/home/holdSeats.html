@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Samira Ghazi-Tehrani Ticket Service Homework</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="../../../resources/css/bootstrap.min.css" rel="stylesheet" media="screen" th:href="@{/resources/css/bootstrap.min.css}"/>
+    <link href="../../../resources/css/core.css" rel="stylesheet" media="screen" th:href="@{/resources/css/core.css}" />
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="../../../resources/js/bootstrap.min.js" th:src="@{/resources/js/bootstrap.min.js}"></script>
+    <script>
+    	var emailValid = false;
+		$("#numberTickets").validate({
+			  rules: {
+			    amount: {
+			      required: true,
+			      digits: true
+			    }
+			  }
+		});
+    	function displayMaxLevel() {
+    		var selectedMinLevel = $("#levelMinDiv input[type='radio']:checked");
+	    	if (selectedMinLevel.val()=='orchestra') {
+	    		$('#levelMaxBalcony2').parent().hide();
+	    		$('#levelMaxBalcony1').parent().hide();
+	    		$('#levelMaxMain').parent().hide();
+	    		$('#levelMaxOrchestra').prop("checked", true);
+	    	}
+	    	else if (selectedMinLevel.val()=='main') {
+	    		$('#levelMaxBalcony2').parent().hide();
+	    		$('#levelMaxBalcony1').parent().hide();
+	    		$('#levelMaxMain').parent().show();
+	    	}
+	    	else if (selectedMinLevel.val()=='balcony1') {
+	    		$('#levelMaxBalcony2').parent().hide();
+	    		$('#levelMaxBalcony1').parent().show();
+	    		$('#levelMaxMain').parent().show();
+	    	}
+	    	else {
+	    		$('#levelMaxBalcony2').parent().show();
+	    		$('#levelMaxBalcony1').parent().show();
+	    		$('#levelMaxMain').parent().show();
+	    	}
+	    	$("#levelMaxDiv").show();
+    	};
+    	function validateEmail() {
+    		emailValid = false;
+    		var atIndex = $('#email').val().lastIndexOf("@");
+    		var dotIndex = $('#email').val().lastIndexOf(".");
+    		if (atIndex > 0)
+    			if (dotIndex > 0)
+    				if (dotIndex > atIndex)
+    					emailValid = true;
+    		toggleButton();
+    	};
+    	function toggleButton() {
+    		$('#goButton').prop("disabled", true);
+    		if (emailValid)
+		    	$('#goButton').prop("disabled", false);
+    	};
+    </script>
+</head>
+<body>
+<div th:replace="fragments/header :: header">Header</div>
+<div class="container">
+    <div class="text-center">
+        <h1>Welcome to the Ticket Counter!</h1>
+		<form class="form-narrow form-horizontal" action="#" method="post" id="ticketForm" th:action="@{/holdTix}">
+		    <fieldset>
+		        <a href="/tickets/seatCount">Find Tickets</a> | Hold Tickets | <a href="/tickets/reserve">Reserve</a>
+				<p th:text="${validationMsg}"/>				
+		        <div class="form-group" id="numTicketsDiv">
+		            <label for="numTicketsDiv" class="col-lg-2 control-label">Number of tickets*</label>
+		            <div class="col-lg-offset-2 col-lg-10">
+			        	<input class="form-control" type="number" min="1" step="1" value="1" required="required" id="numberTickets" name="numberTickets"/>
+					</div>
+				</div>
+		        <div class="form-group" id="emailDiv">
+		            <label for="emailDiv" class="col-lg-2 control-label">Email*</label>
+		            <div class="col-lg-offset-2 col-lg-10">
+			        	<input class="form-control" type="text" id="email" name="email" required="required" onchange="validateEmail();"/>
+					</div>
+				</div>
+				<div class="form-group" id="levelMinDiv" onchange="displayMaxLevel();">
+		            <label for="levelMinDiv" class="col-lg-2 control-label">Select lowest Level</label><br/>
+		            <div class="col-lg-offset-2 col-lg-10">
+						<label for="levelMinOrchestra" style="font-weight:normal;padding-right: 5px;"><input type="radio" name="minLevel" id="levelMinOrchestra" value="orchestra" />Orchestra $100  </label>
+						<label for="levelMinMain" style="font-weight:normal;padding-right: 5px;"><input type="radio" name="minLevel" id="levelMinMain" value="main" />Main $75  </label>
+						<label for="levelMinBalcony1" style="font-weight:normal;padding-right: 5px;"><input type="radio" name="minLevel" id="levelMinBalcony1" value="balcony1" />Balcony1 $50  </label>
+						<label for="levelMinBalcony2" style="font-weight:normal;"><input type="radio" name="minLevel" id="levelMinBalcony2" value="balcony2" />Balcony2 $40  </label>
+		            </div>
+				</div>
+				<div class="form-group" id="levelMaxDiv" style="display:none">
+		            <label for="levelMaxDiv" class="col-lg-2 control-label">Select highest level</label><br/>
+		            <div class="col-lg-offset-2 col-lg-10">
+						<label for="levelMaxOrchestra" style="font-weight:normal;padding-right: 5px;"><input type="radio" name="maxLevel" id="levelMaxOrchestra" value="orchestra" />Orchestra $100  </label>
+						<label for="levelMaxMain" style="font-weight:normal;padding-right: 5px;"><input type="radio" name="maxLevel" id="levelMaxMain" value="main" />Main $75  </label>
+						<label for="levelMaxBalcony1" style="font-weight:normal;padding-right: 5px;"><input type="radio" name="maxLevel" id="levelMaxBalcony1" value="balcony1" />Balcony1 $50  </label>
+						<label for="levelMaxBalcony2" style="font-weight:normal;"><input type="radio" name="maxLevel" id="levelMaxBalcony2" value="balcony2" />Balcony2 $40  </label>
+		            </div>
+				</div>
+		        <div class="form-group" id="buttonDiv">
+		            <div class="col-lg-offset-2 col-lg-10">
+		                <button type="submit" id="goButton" class="btn btn-default" disabled="true">Hold Tickets</button>
+		            </div>
+		        </div>
+	        </fieldset>
+        </form>
+    </div>
+    <div th:replace="fragments/footer :: footer">&copy; 2016 Samira Ghazi-Tehrani</div>
+</div>
+</body>
+</html>

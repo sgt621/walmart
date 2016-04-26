@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Samira Ghazi-Tehrani Ticket Service Homework</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="../../../resources/css/bootstrap.min.css" rel="stylesheet" media="screen" th:href="@{/resources/css/bootstrap.min.css}"/>
+    <link href="../../../resources/css/core.css" rel="stylesheet" media="screen" th:href="@{/resources/css/core.css}" />
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="../../../resources/js/bootstrap.min.js" th:src="@{/resources/js/bootstrap.min.js}"></script>
+</head>
+<body>
+<div th:replace="fragments/header :: header">Header</div>
+<div class="container">
+    <div class="text-center">
+        <h1>Welcome to the Ticket Counter!</h1>
+		<form class="form-narrow form-horizontal" action="#" method="post" id="reserveForm" th:action="@{/reserveTix}" th:object="${message}">
+		    <fieldset>
+		        <a href="/tickets/seatCount">Find Tickets</a> | Hold Tickets | <a href="/tickets/reserve">Reserve</a>
+		        <div>
+		        <p th:text="'The hold on your ' + ${num} + ' ticket(s) on the ' + ${level} + ' level will expire on ' + ${expirationString}"></p>
+		        <p>The following is your reservation number:</p>
+		        <h3 th:text="${seatHoldId}"/>
+		        <p style="font-weight:bold">Reserve now!</p></div>
+	        </fieldset>
+        </form>
+    </div>
+    <div th:replace="fragments/footer :: footer">&copy; 2016 Samira Ghazi-Tehrani</div>
+</div>
+</body>
+</html>

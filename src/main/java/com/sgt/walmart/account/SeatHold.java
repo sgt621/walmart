@@ -36,9 +36,6 @@ public class SeatHold implements java.io.Serializable {
 	@Column
 	private String confirmation;
 	
-	@Column
-	private Integer seatHoldId;
-	
 	@Transient
 	private String expirationString;
 	
@@ -47,7 +44,7 @@ public class SeatHold implements java.io.Serializable {
 	}
 	
 	public SeatHold(Long seq, Integer level, Integer num, String email, 
-					Timestamp expirationDate, String confirmation, Integer seatHoldId) {
+					Timestamp expirationDate, String confirmation) {
 		super();
 		this.seq = seq;
 		this.level = level;
@@ -55,7 +52,6 @@ public class SeatHold implements java.io.Serializable {
 		this.email = email;
 		this.expirationDate = expirationDate;
 		this.confirmation = confirmation;
-		this.seatHoldId = seatHoldId;
 	}
 
 	public String getConfirmation() {
@@ -64,14 +60,6 @@ public class SeatHold implements java.io.Serializable {
 
 	public void setConfirmation(String confirmation) {
 		this.confirmation = confirmation;
-	}
-
-	public Integer getSeatHoldId() {
-		return seatHoldId;
-	}
-
-	public void setSeatHoldId(Integer seatHoldId) {
-		this.seatHoldId = seatHoldId;
 	}
 
 	public String getEmail() {

@@ -1,8 +1,10 @@
 package com.sgt.walmart.account;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,11 @@ public class TicketServiceImpl implements TicketService {
 	private Integer mainSeatsTotal = 20*100;
 	private Integer balcony1SeatsTotal = 15*100;
 	private Integer balcony2SeatsTotal = 15*100;
+	
+	private List<SeatHold> orchestraSeatHold = new ArrayList<SeatHold>();
+	private List<SeatHold> mainSeatHold = new ArrayList<SeatHold>();
+	private List<SeatHold> balcony1SeatHold = new ArrayList<SeatHold>();
+	private List<SeatHold> balcony2SeatHold = new ArrayList<SeatHold>();
 	
 	@Autowired
 	SeatHoldRepository seatHoldRepository;
@@ -68,34 +75,82 @@ public class TicketServiceImpl implements TicketService {
 		this.seatHoldRepository = seatHoldRepository;
 	}
 
+	private void deleteExpired() {
+		Date today = new Date();
+		deleteExpiredHelper(orchestraSeatHold, today);
+		deleteExpiredHelper(mainSeatHold, today);
+		deleteExpiredHelper(balcony1SeatHold, today);
+		deleteExpiredHelper(balcony2SeatHold, today);
+	}
+	
+	private void deleteExpiredHelper(List<SeatHold> list, Date today) {
+		ListIterator<SeatHold> iter = list.listIterator();
+		while(iter.hasNext()) {
+			Date expDate = iter.next().getExpirationDate();
+		    if(expDate!=null && expDate.getTime() < today.getTime())
+		        iter.remove();
+		}		
+	}
+	
 	public int numSeatsAvailable(Optional<Integer> venueLevel) {
 		//delete all expired seat holds
-		seatHoldRepository.deleteExpired();
-		int count = 0;
+		//SGT seatHoldRepository.deleteExpired();
+		deleteExpired();
+		int reserveCount = 0;
+		int holdCount = 0;
 		if (venueLevel!=null) {
 			if (venueLevel.get()>0 && venueLevel.get()<5) {
 				//find all reserved and held seats by level
-				List<SeatHold> seatsHeld = seatHoldRepository.findAllByLevel(venueLevel.get());
-				for (SeatHold temp : seatsHeld) {
-					count += temp.getNum();
+				List<SeatHold> seatsReserved = seatHoldRepository.findAllByLevel(venueLevel.get());
+				for (SeatHold temp : seatsReserved) {
+					reserveCount += temp.getNum();
 				}
-				if (venueLevel.get().equals(1)) 
-					return orchestraSeatsTotal - count;
-				else if (venueLevel.get().equals(2)) 
-					return mainSeatsTotal - count;
-				else if (venueLevel.get().equals(3)) 
-					return balcony1SeatsTotal - count;
-				else if (venueLevel.get().equals(4)) 
-					return balcony2SeatsTotal - count;
+				
+				if (venueLevel.get().equals(1)) {
+					for (SeatHold temp : orchestraSeatHold) {
+						holdCount += temp.getNum();
+					}					
+					return orchestraSeatsTotal - reserveCount - holdCount;
+				}
+				else if (venueLevel.get().equals(2)) {
+					for (SeatHold temp : mainSeatHold) {
+						holdCount += temp.getNum();
+					}					
+					return mainSeatsTotal - reserveCount - holdCount;
+				}
+				else if (venueLevel.get().equals(3)) {
+					for (SeatHold temp : balcony1SeatHold) {
+						holdCount += temp.getNum();
+					}					
+					return balcony1SeatsTotal - reserveCount - holdCount;
+				}
+				else if (venueLevel.get().equals(4)) {
+					for (SeatHold temp : balcony2SeatHold) {
+						holdCount += temp.getNum();
+					}					
+					return balcony2SeatsTotal - reserveCount - holdCount;
+				}
 			}
 		}
 		//if looking through all levels, find all seats, then compute accordingly
 		else {
-			List<SeatHold> seatsHeld = seatHoldRepository.findAll();
-			for (SeatHold temp : seatsHeld) {
-				count += temp.getNum();
+			List<SeatHold> seatsReserved = seatHoldRepository.findAll();
+			for (SeatHold temp : seatsReserved) {
+				reserveCount += temp.getNum();
 			}
-			return (int) (orchestraSeatsTotal + mainSeatsTotal + balcony1SeatsTotal + balcony2SeatsTotal - count);
+			for (SeatHold temp : orchestraSeatHold) {
+				holdCount += temp.getNum();
+			}
+			for (SeatHold temp : mainSeatHold) {
+				holdCount += temp.getNum();
+			}
+			for (SeatHold temp : balcony1SeatHold) {
+				holdCount += temp.getNum();
+			}
+			for (SeatHold temp : balcony2SeatHold) {
+				holdCount += temp.getNum();
+			}
+			return (int) (orchestraSeatsTotal + mainSeatsTotal + balcony1SeatsTotal + balcony2SeatsTotal - reserveCount - holdCount);
 		}
 		//if any other value is passed in, return 0
 		return 0;
@@ -129,7 +184,27 @@ public class TicketServiceImpl implements TicketService {
 		
 		return level;
 	}
-
+	
+	private Long getSeatHoldSeq(int level) {
+		Long smallest = new Long(level);
+		List<SeatHold> seatHoldList = null;
+		if (level==1) 
+			seatHoldList = orchestraSeatHold;
+		else if (level==2)
+			seatHoldList = mainSeatHold;
+		else if (level==3)
+			seatHoldList = balcony1SeatHold;
+		else if (level==4)
+			seatHoldList = balcony2SeatHold;
+		for (int i = 0; i < seatHoldList.size(); i++) {
+			if (smallest.equals(seatHoldList.get(i).getSeq())) {
+				smallest+=4;
+				i=0;
+			}				
+		}
+		return smallest;
+	}
+	
 	public SeatHold findAndHoldSeats(int numSeats, Optional<Integer> minLevel, Optional<Integer> maxLevel, String customerEmail) {
 		SeatHold seatHold = new SeatHold();
 		//check all parameters
@@ -151,7 +226,17 @@ public class TicketServiceImpl implements TicketService {
 			seatHold.setNum(numSeats);
 			seatHold.setLevel(level.get());
 			seatHold.setEmail(customerEmail);
-			return seatHoldRepository.save(seatHold);
+			seatHold.setSeq(getSeatHoldSeq(level.get()));
+			if (level.get()==1) 
+				orchestraSeatHold.add(seatHold);
+			else if (level.get()==2)
+				mainSeatHold.add(seatHold);
+			else if (level.get()==3)
+				balcony1SeatHold.add(seatHold);
+			else if (level.get()==4)
+				balcony2SeatHold.add(seatHold);
+			return seatHold;
+//SGT			return seatHoldRepository.save(seatHold);
 		}
 		//if there was a problem with the seat hold, forward error code to controller
 		else if (level.isPresent() && level.get().intValue()==0) {
@@ -178,12 +263,31 @@ public class TicketServiceImpl implements TicketService {
 		return false;
 	}
 	
+	private SeatHold findHold(int seatHoldId) {
+		List<SeatHold> seatHoldList = null;
+		if (seatHoldId%4==1)
+			seatHoldList = orchestraSeatHold;
+		else if (seatHoldId%4==2)
+			seatHoldList = mainSeatHold;
+		else if (seatHoldId%4==3)
+			seatHoldList = balcony1SeatHold;
+		else if (seatHoldId%4==0)
+			seatHoldList = balcony2SeatHold;
+		
+		for (SeatHold temp : seatHoldList) {
+			if (seatHoldId==temp.getSeq())
+				return temp;
+		}
+		return new SeatHold();
+	}
+	
 	public String reserveSeats(int seatHoldId, String customerEmail) {
 		Date today = new Date();
 		if (seatHoldId==0 || !validateEmail(customerEmail)) {
 			return "error"; 
 		}
-		SeatHold seatHold = seatHoldRepository.findOne(new Long(seatHoldId));
+//SGT		SeatHold seatHold = seatHoldRepository.findOne(new Long(seatHoldId));
+		SeatHold seatHold = findHold(seatHoldId);
 		if (seatHold==null) {
 			return "error";
 		}
@@ -191,11 +295,27 @@ public class TicketServiceImpl implements TicketService {
 			return "expired";
 		}
 		//if no errors or exceptions, remove the expiration date and set the confirmation number and commit
-		seatHold.setExpirationDate(null);
-		String confirmationNumber = (seatHoldId + 1000)/2 + "A";
-		seatHold.setConfirmation(confirmationNumber);
-		seatHold = seatHoldRepository.save(seatHold);
 		
+		SeatHold reserveSeatHold = new SeatHold();
+		String confirmationNumber = (seatHoldId + 1000)/2 + "A";
+		reserveSeatHold.setConfirmation(confirmationNumber);
+		reserveSeatHold.setLevel(seatHold.getLevel());
+		reserveSeatHold.setEmail(seatHold.getEmail());
+		reserveSeatHold.setNum(seatHold.getNum());
+		reserveSeatHold = seatHoldRepository.save(reserveSeatHold);
+		
+		if (seatHoldId%4==1) {
+			orchestraSeatHold.remove(seatHold);
+		}
+		else if (seatHoldId%4==2) {
+			mainSeatHold.remove(seatHold);
+		}
+		else if (seatHoldId%4==3) {
+			balcony1SeatHold.remove(seatHold);
+		}
+		else if (seatHoldId%4==0) {
+			balcony2SeatHold.remove(seatHold);
+		}
 		return confirmationNumber;
 	}
 }

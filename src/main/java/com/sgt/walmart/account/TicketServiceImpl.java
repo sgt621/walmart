@@ -288,7 +288,7 @@ public class TicketServiceImpl implements TicketService {
 		}
 //SGT		SeatHold seatHold = seatHoldRepository.findOne(new Long(seatHoldId));
 		SeatHold seatHold = findHold(seatHoldId);
-		if (seatHold==null) {
+		if (seatHold==null || seatHold.getExpirationDate()==null) {
 			return "error";
 		}
 		if (today.getTime()>seatHold.getExpirationDate().getTime()) {

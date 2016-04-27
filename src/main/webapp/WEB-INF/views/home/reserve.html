@@ -42,6 +42,7 @@
 		<form class="form-narrow form-horizontal" action="#" method="post" id="ticketForm" th:action="@{/reserveTix}">
 		    <fieldset>
 		        <a href="/tickets/seatCount">Find Tickets</a> | <a href="/tickets/holdSeats">Hold Tickets</a> | <a href="/tickets/reserve">Reserve</a>
+		        <p th:text="${validationMsg}"/>
 		        <div class="form-group" id="numTicketsDiv">
 		            <label for="numTicketsDiv" class="col-lg-2 control-label">Seat Hold Number*</label>
 		            <div class="col-lg-offset-2 col-lg-10">
